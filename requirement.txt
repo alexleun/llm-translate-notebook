@@ -1,0 +1,6 @@
+ipywidgets
+langchain
+spacy
+transformers
+torch
+sentencepiece
