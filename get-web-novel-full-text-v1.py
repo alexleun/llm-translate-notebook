@@ -1,4 +1,4 @@
-# Get the web contain in Japan novel, work with ncode.syosetu.com
+# Get the web contain in Japan novel, work with jp site
 import requests
 from bs4 import BeautifulSoup
 
@@ -7,7 +7,7 @@ def find_between(s, start, end):
 
 # Get subtitle and url from source_url
 novel_num = "Novel_code_here"
-base_url = "https://ncode.syosetu.com/"
+base_url = "https://ncode.your_novel_site_here.com/"
 headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
 response = requests.get(base_url+novel_num+'/', headers=headers)
 soup = BeautifulSoup(response.content, "html.parser")
