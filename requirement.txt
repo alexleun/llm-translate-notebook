@@ -1,6 +1,8 @@
-ipywidgets
+# ipywidgets
 langchain
 spacy
 transformers
-torch
-sentencepiece
+tqdm
+# torch
+# sentencepiece
+# python -m spacy download en_core_web_sm
