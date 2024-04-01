@@ -4,6 +4,7 @@ from langchain.text_splitter import CharacterTextSplitter
 import requests
 from tqdm import tqdm
 import argparse
+import opencc
 
 
 url = "http://127.0.0.1:5000/v1/chat/completions"
@@ -12,9 +13,10 @@ headers = {
     "Content-Type": "application/json"
 }
 history = []
+converter = opencc.OpenCC('s2t')
 
 # Translate_counter for user input if program has stop with restart from stop point
-def api_trans(in_file = "n4764du.txt", out_file = "n4764du-qwen15.txt", Translate_counter = 0, custom_chunk_size = 250, language = "Chinese"):
+def api_trans(in_file = "n4764du.txt", out_file = "n4764du-qwen15.txt", Translate_counter = 0, custom_chunk_size = 250, language = "Chinese", Keep_Orignial = False):
 
     f = io.open(in_file, mode="r", encoding="utf-8")
     s = f.read()
@@ -61,7 +63,11 @@ def api_trans(in_file = "n4764du.txt", out_file = "n4764du-qwen15.txt", Translat
                         }
                 response = requests.post(url, headers=headers, json=data, verify=False)
                 rs = response.json()['choices'][0]['message']['content']
-                fp.write('\n'+ rs)
+                rs = converter.convert(rs)
+                if Keep_Orignial:
+                    fp.write('\n'+ i + '\n' + rs)
+                else:
+                    fp.write('\n'+ rs)
                 fp.flush()
         fp.close()
         
@@ -72,6 +78,7 @@ if __name__ == '__main__':
     parser.add_argument("--Translate_counter", type=int, default=0, help="Translate counter value")
     parser.add_argument("--custom_chunk_size", type=int, default=250, help="custom chunk size")
     parser.add_argument("--custom_language", default="Chinese", help="custom chunk size")
+    parser.add_argument("--Keep_Orignial", type=bool, default=False, help="Keep original text or not")
     args = parser.parse_args()
     api_trans(args.in_file, args.out_file, args.Translate_counter, args.custom_chunk_size,
-    args.custom_language)
+    args.custom_language, args.Keep_Orignial)
