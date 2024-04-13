@@ -50,7 +50,7 @@ def api_trans(in_file = "n4764du.txt", Translate_counter = 0, custom_chunk_size 
     x = 0
     original_text_list = []
     translated_text_list = []
-    with open(out_file, 'a', encoding='UTF-8') as fp, open(json_file, 'w', encoding='UTF-8') as json_fp:
+    with open(out_file, 'a', encoding='UTF-8') as fp, open(json_file, 'a', encoding='UTF-8') as json_fp:
         for i in texts:
             p2.update(1)
             x += 1
@@ -85,6 +85,9 @@ def api_trans(in_file = "n4764du.txt", Translate_counter = 0, custom_chunk_size 
                 json.dump(json_data, json_fp, ensure_ascii=False, indent=4)
                 json_fp.write('\n')
                 json_fp.flush()
+                original_text_list=[]
+                translated_text_list=[]
+                fp.flush()
 
         fp.close()
         json_fp.close()

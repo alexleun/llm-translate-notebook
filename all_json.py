@@ -18,7 +18,7 @@ headers = {
 history = []
 converter = opencc.OpenCC('s2t')
 
-def api_trans(in_file = "n4764du.txt", out_file = "n4764du-qwen15.txt", json_out_file = "n4764du-qwen15.json", Translate_counter = 0, custom_chunk_size = 250, language = "Chinese", Keep_Orignial = False):
+def api_trans(in_file = "n4764du.txt", out_file = "n4764du-qwen15.txt", json_out_file = "n4764du-qwen15.json", Translate_counter = 0, custom_chunk_size = 2000, language = "Chinese", Keep_Orignial = False):
 
     f = io.open(in_file, mode="r", encoding="utf-8")
     s = f.read()
@@ -47,7 +47,7 @@ def api_trans(in_file = "n4764du.txt", out_file = "n4764du-qwen15.txt", json_out
 
     p2 = tqdm(total=len(texts), desc="Translating", dynamic_ncols=True, position=0, leave=True)
     x = 0
-    with open(out_file, 'a', encoding='UTF-8') as fp:
+    with open(out_file, 'a', encoding='UTF-8') as fp, open(json_output_file, 'w', encoding='UTF-8') as json_fp:
         for i in texts:
             #p2.value += 1
             p2.update(1)
@@ -73,23 +73,35 @@ def api_trans(in_file = "n4764du.txt", out_file = "n4764du-qwen15.txt", json_out
                     fp.write('\n'+ i + '\n' + rs)
                 else:
                     fp.write('\n'+ rs)
-                fp.flush()
                 original_text_list.append(i)
                 translated_text_list.append(rs)
+                # Write the JSON file
+                json_data = {
+                    "original_text": original_text_list,
+                    "translated_text": translated_text_list
+                }
+                json.dump(json_data, json_fp, ensure_ascii=False, indent=4)
+                json_fp.write('\n')
+                original_text_list = []
+                translated_text_list = []
+                json_fp.flush()
+                
+                fp.flush()
         fp.close()
+        json_fp.close()
         
     # Write the corrected JSON file
-    corrected_json_data = {
-        "original_text": original_text_list,
-        "translated_text": translated_text_list
-    }
-    with open(json_out_file, 'w', encoding='UTF-8') as json_fp:
-        json.dump(corrected_json_data, json_fp, ensure_ascii=False, indent=4)
+    # corrected_json_data = {
+        # "original_text": original_text_list,
+        # "translated_text": translated_text_list
+    # }
+    # with open(json_out_file, 'w', encoding='UTF-8') as json_fp:
+        # json.dump(corrected_json_data, json_fp, ensure_ascii=False, indent=4)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--Translate_counter", type=int, default=0, help="Translate counter value")
-    parser.add_argument("--custom_chunk_size", type=int, default=250, help="custom chunk size")
+    parser.add_argument("--custom_chunk_size", type=int, default=2000, help="custom chunk size")
     parser.add_argument("--custom_language", default="Chinese", help="custom chunk size")
     parser.add_argument("--Keep_Orignial", type=bool, default=False, help="Keep original text or not")
     args = parser.parse_args()
