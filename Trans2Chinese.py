@@ -126,10 +126,10 @@ def api_trans(in_file = "default.txt", Translate_counter = 0, custom_chunk_size 
                 }
                 json.dump(json_data, json_fp, ensure_ascii=False, indent=4)
                 json_fp.write('\n')
-                json_fp.flush()
+                #json_fp.flush()
                 original_text_list=[]
                 translated_text_list=[]
-                fp.flush()
+                #fp.flush()
 
         fp.close()
         json_fp.close()

@@ -10,6 +10,7 @@ from tqdm import tqdm
 import opencc
 import json
 
+
 url = "http://127.0.0.1:5000/v1/chat/completions"
 # url = "http://127.0.0.1:5000/v1/completions"
 headers = {
@@ -18,7 +19,7 @@ headers = {
 history = []
 converter = opencc.OpenCC('s2t')
 
-def api_trans(in_file = "n4764du.txt", out_file = "n4764du-qwen15.txt", json_out_file = "n4764du-qwen15.json", Translate_counter = 0, custom_chunk_size = 2000, language = "Chinese", Keep_Orignial = False):
+def api_trans(in_file = "temp.txt", out_file = "temp-big5.txt", json_out_file = "n4764du-qwen15.json", Translate_counter = 0, custom_chunk_size = 20, language = "Chinese", Keep_Orignial = False):
 
     f = io.open(in_file, mode="r", encoding="utf-8")
     s = f.read()
@@ -34,7 +35,7 @@ def api_trans(in_file = "n4764du.txt", out_file = "n4764du-qwen15.txt", json_out
     texts = text_splitter.split_text(s)
 
     template = """
-    Translate to {language}:
+    Translate to {language}. Your should answer tranlate ONLY, If no need to translate, answer original string ONLY:
     {question}
     """
     prompt = PromptTemplate(template=template, input_variables=["question"])
@@ -63,18 +64,59 @@ def api_trans(in_file = "n4764du.txt", out_file = "n4764du-qwen15.txt", json_out
                                     ],
                         "mode": "instruct", #instruct
                         "instruction_template": "Alpaca",
-                        "temperature": 0.7,
-                        "top_p": 0.9,
+                        "temperature": 0.01,
+                        "top_p": 0.95,
                         }
                 response = requests.post(url, headers=headers, json=data, verify=False)
                 rs = response.json()['choices'][0]['message']['content']
                 rs = converter.convert(rs)
-                if Keep_Orignial:
-                    fp.write('\n'+ i + '\n' + rs)
+                
+                # Check if the translation is good enough
+                if is_good_translation(i, rs):
+                    if Keep_Orignial:
+                        fp.write('\n'+ i + '\n' + rs)
+                    else:
+                        fp.write('\n'+ rs)
+                    original_text_list.append(i)
+                    translated_text_list.append(rs)
                 else:
-                    fp.write('\n'+ rs)
-                original_text_list.append(i)
-                translated_text_list.append(rs)
+                    # Request a second translation
+                    data = {
+                            "messages": [
+                                  {
+                                    "role": "user",
+                                    "content": prompt.format(question=i, language=language)
+                                  },
+                                  {
+                                    "role": "assistant",
+                                    "content": rs
+                                  },
+                                  {
+                                    "role": "user",
+                                    "content": "Please translate this again, I'm not satisfied with the result."
+                                  }
+                                    ],
+                            "mode": "instruct", #instruct
+                            "instruction_template": "Alpaca",
+                            "temperature": 0.7,
+                            "top_p": 0.9,
+                            }
+                    response = requests.post(url, headers=headers, json=data, verify=False)
+                    rs = response.json()['choices'][0]['message']['content']
+                    rs = converter.convert(rs)
+                    
+                    # Check if the second translation is good enough
+                    if is_good_translation(i, rs):
+                        if Keep_Orignial:
+                            fp.write('\n'+ i + '\n' + rs)
+                        else:
+                            fp.write('\n'+ rs)
+                        original_text_list.append(i)
+                        translated_text_list.append(rs)
+                    else:
+                        # Discard the translation and move on
+                        print(f"\nTranslation for segment {x} was not good enough, discarding.\n")
+
                 # Write the JSON file
                 json_data = {
                     "original_text": original_text_list,
@@ -84,9 +126,9 @@ def api_trans(in_file = "n4764du.txt", out_file = "n4764du-qwen15.txt", json_out
                 json_fp.write('\n')
                 original_text_list = []
                 translated_text_list = []
-                json_fp.flush()
+                #json_fp.flush()
                 
-                fp.flush()
+                #fp.flush()
         fp.close()
         json_fp.close()
         
@@ -98,10 +140,36 @@ def api_trans(in_file = "n4764du.txt", out_file = "n4764du-qwen15.txt", json_out
     # with open(json_out_file, 'w', encoding='UTF-8') as json_fp:
         # json.dump(corrected_json_data, json_fp, ensure_ascii=False, indent=4)
 
+# Function to check if the translation is good enough
+def is_good_translation(original, translation):
+    # You can implement your own logic here to determine if the translation is good enough.
+    # For example, you could check the fluency, accuracy, and relevance of the translation.
+    
+    # Use the local LLM to check the translation quality
+    data = {
+            "messages": [
+                  {
+                    "role": "user",
+                    "content": f"Is the following translation of '{original}' accurate and fluent?\n\n{translation}\nYou should answer Yes, No, accurate or fluent only.\nIf the translation content any text with is not the same as original, answer should be No."
+                  }
+                    ],
+            "mode": "instruct", #instruct
+            "instruction_template": "Alpaca",
+            "temperature": 0.7,
+            "top_p": 0.9,
+            }
+    response = requests.post(url, headers=headers, json=data, verify=False)
+    response_text = response.json()['choices'][0]['message']['content']
+
+    # Check if the LLM considers the translation to be good
+    if "yes" in response_text.lower() or "accurate" in response_text.lower() or "fluent" in response_text.lower():
+        return True
+    else:
+        return False
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--Translate_counter", type=int, default=0, help="Translate counter value")
-    parser.add_argument("--custom_chunk_size", type=int, default=2000, help="custom chunk size")
+    parser.add_argument("--custom_chunk_size", type=int, default=20, help="custom chunk size")
     parser.add_argument("--custom_language", default="Chinese", help="custom chunk size")
     parser.add_argument("--Keep_Orignial", type=bool, default=False, help="Keep original text or not")
     args = parser.parse_args()
