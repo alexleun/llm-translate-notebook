@@ -57,6 +57,7 @@ def api_trans(in_file = "default.txt", Translate_counter = 0, custom_chunk_size 
             p2.update(1)
             x += 1
             if x >= Translate_counter:
+                # Get the initial translation
                 data = {
                         "messages": [
                               {
@@ -72,17 +73,10 @@ def api_trans(in_file = "default.txt", Translate_counter = 0, custom_chunk_size 
                 response = requests.post(url, headers=headers, json=data, verify=False)
                 rs = response.json()['choices'][0]['message']['content']
                 rs = converter.convert(rs)
-                
-                # Check if the translation is good enough
-                if is_good_translation(i, rs):
-                    if Keep_Orignial:
-                        fp.write('\n'+ i + '\n' + rs)
-                    else:
-                        fp.write('\n'+ rs)
-                    original_text_list.append(i)
-                    translated_text_list.append(rs)
-                else:
-                    # Request a second translation
+
+                # Loop until the translation is good enough
+                while not is_good_translation(i, rs):
+                    # Request a new translation with feedback
                     data = {
                             "messages": [
                                   {
@@ -95,7 +89,7 @@ def api_trans(in_file = "default.txt", Translate_counter = 0, custom_chunk_size 
                                   },
                                   {
                                     "role": "user",
-                                    "content": "Please translate this again, I'm not satisfied with the result."
+                                    "content": "Please translate this again, I'm not satisfied with the result because [REASON]."
                                   }
                                     ],
                             "mode": "instruct", #instruct
@@ -103,21 +97,21 @@ def api_trans(in_file = "default.txt", Translate_counter = 0, custom_chunk_size 
                             "temperature": 0.7,
                             "top_p": 0.9,
                             }
+
+                    # Get the reason for dissatisfaction from the LLM
+                    data["messages"][2]["content"] = data["messages"][2]["content"].replace("[REASON]", get_dissatisfaction_reason(i, rs))
+
                     response = requests.post(url, headers=headers, json=data, verify=False)
                     rs = response.json()['choices'][0]['message']['content']
                     rs = converter.convert(rs)
-                    
-                    # Check if the second translation is good enough
-                    if is_good_translation(i, rs):
-                        if Keep_Orignial:
-                            fp.write('\n'+ i + '\n' + rs)
-                        else:
-                            fp.write('\n'+ rs)
-                        original_text_list.append(i)
-                        translated_text_list.append(rs)
-                    else:
-                        # Discard the translation and move on
-                        print(f"\nTranslation for segment {x} was not good enough, discarding.\n")
+
+                # Add the translated text to the list
+                if Keep_Orignial:
+                    fp.write('\n'+ i + '\n' + rs)
+                else:
+                    fp.write('\n'+ rs)
+                original_text_list.append(i)
+                translated_text_list.append(rs)
 
                 # Write the JSON file
                 json_data = {
@@ -126,10 +120,10 @@ def api_trans(in_file = "default.txt", Translate_counter = 0, custom_chunk_size 
                 }
                 json.dump(json_data, json_fp, ensure_ascii=False, indent=4)
                 json_fp.write('\n')
-                #json_fp.flush()
+                json_fp.flush()
                 original_text_list=[]
                 translated_text_list=[]
-                #fp.flush()
+                fp.flush()
 
         fp.close()
         json_fp.close()
@@ -144,7 +138,7 @@ def is_good_translation(original, translation):
             "messages": [
                   {
                     "role": "user",
-                    "content": f"Is the following translation of '{original}' accurate and fluent?\n\n{translation}\nYou should answer Yes, No, accurate or fluent only.\nIf the translation content any text with is not the same as original, answer should be No."
+                    "content": f"Is the following translation of '{original}' accurate and fluent?\n\n{translation}"
                   }
                     ],
             "mode": "instruct", #instruct
@@ -160,13 +154,37 @@ def is_good_translation(original, translation):
         return True
     else:
         return False
-if __name__ == '__main__':
+
+# Function to get the reason for dissatisfaction with the translation
+def get_dissatisfaction_reason(original, translation):
+    # You can implement your own logic here to determine the reason for dissatisfaction.
+    # For example, you could use a language model to analyze the translation and identify areas where it is inaccurate, not fluent, or irrelevant.
+
+    # Use the local LLM to analyze the translation and identify areas for improvement
+    data = {
+            "messages": [
+                  {
+                    "role": "user",
+                    "content": f"Please analyze the following translation of '{original}' and identify areas where it is inaccurate, not fluent, or irrelevant.\n\n{translation}\nYou should answer the reason why the translation is not good enough, for example, the translation is not accurate because it does not convey the same meaning as the original text, or the translation is not fluent because it contains grammatical errors or awkward phrasing.\n\nIf the translation is accurate, just answer accurate."
+                  }
+                    ],
+            "mode": "instruct", #instruct
+            "instruction_template": "Alpaca",
+            "temperature": 0.7,
+            "top_p": 0.9,
+            }
+    response = requests.post(url, headers=headers, json=data, verify=False)
+    response_text = response.json()['choices'][0]['message']['content']
+
+    return response_text
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("in_file", help="input file path")
-    parser.add_argument("--Translate_counter", type=int, default=0, help="Translate counter value")
-    parser.add_argument("--custom_chunk_size", type=int, default=20, help="custom chunk size")
-    parser.add_argument("--custom_language", default="Chinese", help="custom chunk size")
-    parser.add_argument("--Keep_Orignial", type=bool, default=False, help="Keep original text or not")
+    parser.add_argument("-i", "--input_file", type=str, default="default.txt", help="Path to the input file")
+    parser.add_argument("-c", "--chunk_size", type=int, default=20, help="Chunk size for text splitting")
+    parser.add_argument("-l", "--language", type=str, default="Chinese", help="Language to translate to")
+    parser.add_argument("-k", "--keep_original", action="store_true", help="Keep the original text in the output file")
+    parser.add_argument("-t", "--translate_counter", type=int, default=0, help="Translate counter for restart from stop point")
     args = parser.parse_args()
-    api_trans(args.in_file, args.Translate_counter, args.custom_chunk_size,
-    args.custom_language, args.Keep_Orignial)
+
+    api_trans(in_file=args.input_file, custom_chunk_size=args.chunk_size, language=args.language, Keep_Orignial=args.keep_original, Translate_counter=args.translate_counter)
