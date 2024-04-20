@@ -17,6 +17,10 @@ history = []
 converter = opencc.OpenCC('s2t')
 
 #\n Please reply only translated content which is the original text ONLY.\nYou should keep the replied translation content is clean for external script to perform text output.\n If original text no need to translate, reply original string.:\n\n
+#Translate to {language}. Your should answer tranlate ONLY, If no need to translate, answer original string ONLY
+#Please translate this again, I'm not satisfied with the result because [REASON].
+#Is the following translation of '{original}' accurate and fluent?
+#Please analyze the following translation of '{original}' and identify areas where it is inaccurate, not fluent, or irrelevant.\n\n{translation}\nYou should answer the reason why the translation is not good enough, for example, the translation is not accurate because it does not convey the same meaning as the original text, or the translation is not fluent because it contains grammatical errors or awkward phrasing.\n\nIf the translation is accurate, just answer accurate.
 
 # Translate_counter for user input if program has stop with restart from stop point
 def api_trans(in_file = "default.txt", Translate_counter = 0, custom_chunk_size = 20, language = "Chinese", Keep_Orignial = False):
@@ -40,7 +44,7 @@ def api_trans(in_file = "default.txt", Translate_counter = 0, custom_chunk_size 
     texts = text_splitter.split_text(s)
 
     template = """
-    Translate to {language}. Your should answer tranlate ONLY, If no need to translate, answer original string ONLY:
+    翻译成{language}。 您应该仅回答翻译，如果不需要翻译，则仅回答原始字符串:
     {question}
     """
     prompt = PromptTemplate(template=template, input_variables=["question"])
@@ -89,7 +93,7 @@ def api_trans(in_file = "default.txt", Translate_counter = 0, custom_chunk_size 
                                   },
                                   {
                                     "role": "user",
-                                    "content": "Please translate this again, I'm not satisfied with the result because [REASON]."
+                                    "content": "请再翻译一次，我对结果不满意，因为 [REASON]."
                                   }
                                     ],
                             "mode": "instruct", #instruct
@@ -103,7 +107,7 @@ def api_trans(in_file = "default.txt", Translate_counter = 0, custom_chunk_size 
 
                     response = requests.post(url, headers=headers, json=data, verify=False)
                     rs = response.json()['choices'][0]['message']['content']
-                    rs = converter.convert(rs)
+                rs = converter.convert(rs)
 
                 # Add the translated text to the list
                 if Keep_Orignial:
@@ -150,7 +154,7 @@ def is_good_translation(original, translation):
     response_text = response.json()['choices'][0]['message']['content']
 
     # Check if the LLM considers the translation to be good
-    if "yes" in response_text.lower() or "accurate" in response_text.lower() or "fluent" in response_text.lower():
+    if "翻译非常准确" in response_text.lower() or "是的" in response_text.lower() or "翻译准确" in response_text.lower() or  "yes" in response_text.lower() or  "accurate" in response_text.lower() or "fluent" in response_text.lower() or "but" not in response_text.lower() or "However" not in response_text.lower():
         return True
     else:
         return False
@@ -165,7 +169,7 @@ def get_dissatisfaction_reason(original, translation):
             "messages": [
                   {
                     "role": "user",
-                    "content": f"Please analyze the following translation of '{original}' and identify areas where it is inaccurate, not fluent, or irrelevant.\n\n{translation}\nYou should answer the reason why the translation is not good enough, for example, the translation is not accurate because it does not convey the same meaning as the original text, or the translation is not fluent because it contains grammatical errors or awkward phrasing.\n\nIf the translation is accurate, just answer accurate."
+                    "content": f"请分析以下“{original}”的翻译，找出其中不准确、不流畅或不相关的地方。\n\n{translation}\n您应该回答翻译不够好的原因，例如， 翻译不准确，因为它没有传达与原文相同的含义，或者翻译不流畅，因为它包含语法错误或不恰当的措辞。\n\n如果翻译准确，请回答准确。"
                   }
                     ],
             "mode": "instruct", #instruct
