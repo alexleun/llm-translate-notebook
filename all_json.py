@@ -21,11 +21,13 @@ def api_trans(in_file="temp.txt", out_file="temp-big5.txt", json_out_file="n4764
     with open(in_file, 'r', encoding='utf-8') as f:
         text = f.read()
 
+    print(f"\n\nTranslate:{in_file}\n\n")
     # Get translations (assuming translate_text returns a list of translations)
     translations = translate_text(text, language, Keep_Orignial, custom_chunk_size)
 
     # ... (rest of the code for printing information)
 
+    
     # Save translations to files
     original_text_list = []
     translated_text_list = []
