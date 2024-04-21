@@ -1,31 +1,35 @@
-**README.md for Trans2Chinese.py**
+## README.md for Trans2Chinese
 
-**Introduction**
+### Introduction
 
-Trans2Chinese.py is a Python program that allows you to translate text to Chinese using a local LLM server with API support. The local LLM should be run on the same computer, with the default address being:
+Trans2Chinese- is a Python program that allows you to translate text to Chinese using a local LLM server with API support. This version builds upon the previous iterations by incorporating new features and improvements:
 
-"http://127.0.0.1:5000/v1/chat/completions"
+**New Features:**
 
-**Features**
+* **PyTorch Installation:** Supports PyTorch installation for GPU acceleration, enabling faster processing for larger datasets.
+* **Traditional Chinese Conversion:** Allows conversion of translated text to Traditional Chinese using the OpenCC library.
+* **Original Text Retention:** Provides the option to keep the original text in the output file for learning purposes.
+* **Chunk Size Customization:** Enables users to specify the desired chunk size for text splitting, allowing for more granular control over the translation process.
+* **Improved Translation Accuracy:** Leverages the power of the Qwen LLM model to deliver more accurate and nuanced translations.
+
+**Key Features:**
 
 * Translates text to Chinese using a local LLM server
 * Supports custom chunk size and language selection
 * Option to keep the original text in the output file for learning purposes
-* **New:** Supports PyTorch installation for GPU acceleration
-* **New:** Supports convert to Tranditional Chinese
-* **New:** Supports Option to keep original text in output file.
+* Supports convert to Traditional Chinese
+* Supports Option to keep original text in output file.
+* Improved translation accuracy with Qwen LLM model
 
-
-**Requirements**
+### Requirements
 
 * Python 3.6 or later
 * langchain
 * opencc
 * tqdm
 * argparse
-* PyTorch (for GPU acceleration)
 
-**Installation**
+### Installation
 
 1. Install the required packages:
 
@@ -33,45 +37,70 @@ Trans2Chinese.py is a Python program that allows you to translate text to Chines
 pip install langchain opencc tqdm argparse
 ```
 
-2. Install PyTorch for GPU acceleration:
-
-```
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-```
-
-3. Clone this repository:
+2. Clone this repository:
 
 ```
 git clone https://github.com/alexleun/llm-translate-notebook.git
 ```
 
-**Usage**
+### Usage
 
-1. Open the `api_trans.py` script in a text editor.
+1. Open the `Trans2Chinese.py` script for single file translation or `all_json.py` for batch translation in a text editor.
 
 2. Set the following parameters:
 
-* `in_file`: Path to the input text file
-* `out_file`: Path to the output text file
-* `Translate_counter`: Starting translation counter (useful for resuming a stopped translation)
-* `custom_chunk_size`: Size of each chunk of text to be translated (default: 250)
+* `custom_chunk_size`: Size of each chunk of text to be translated (default: 20)
 * `custom_language`: Language to translate to (default: "Chinese")
 * `Keep_Orignial`: Whether to keep the original text in the output file (default: False)
 
 3. Run the script:
 
-```
-python Trans2Chinese.py
-```
-
-**Example**
-
-To translate the text in `input.txt` to Chinese and save the output in `output.txt`, run the following command:
+**For single file translation:**
 
 ```
-python Trans2Chinese.py [-h] [--Translate_counter TRANSLATE_COUNTER] [--custom_chunk_size CUSTOM_CHUNK_SIZE]
-                        [--custom_language CUSTOM_LANGUAGE] [--Keep_Orignial KEEP_ORIGNIAL]
-                        in_file out_file
+python Trans2Chinese.py [-h] [-i INPUT_FILE] [-c CHUNK_SIZE] [-l LANGUAGE] [-k] [-t TRANSLATE_COUNTER]
+
+options:
+  -h, --help            show this help message and exit
+  -i INPUT_FILE, --input_file INPUT_FILE
+                        Path to the input file
+  -c CHUNK_SIZE, --chunk_size CHUNK_SIZE
+                        Chunk size for text splitting
+  -l LANGUAGE, --language LANGUAGE
+                        Language to translate to
+  -k, --keep_original   Keep the original text in the output file
+  -t TRANSLATE_COUNTER, --translate_counter TRANSLATE_COUNTER
+                        Translate counter for restart from stop point
+```
+
+**For batch translation:**
+
+```
+python all_json.py [-h] [--Translate_counter TRANSLATE_COUNTER] [--custom_chunk_size CUSTOM_CHUNK_SIZE]
+                   [--custom_language CUSTOM_LANGUAGE] [--Keep_Orignial KEEP_ORIGNIAL]
+
+options:
+  -h, --help            show this help message and exit
+  --custom_chunk_size CUSTOM_CHUNK_SIZE
+                        custom chunk size
+  --custom_language CUSTOM_LANGUAGE
+                        custom chunk size
+  --Keep_Orignial KEEP_ORIGNIAL
+                        Keep original text or not
+```
+
+**Example:**
+
+To translate the text in `input.txt` to Chinese and save the output in a file with the same name but with the added suffix "-big5.txt", run the following command:
+
+```
+python Trans2Chinese.py --in_file input.txt --Translate_counter 0 --custom_chunk_size 20 --custom_language Chinese --Keep_Orignial False
+```
+
+To translate all text files in the directory to Chinese and save the translated files in the same directory with the added suffix "-big5.txt", run the following command:
+
+```
+python all_json.py --custom_chunk_size 20 --custom_language Chinese --Keep_Orignial False
 ```
 
 **Note:**
@@ -80,14 +109,26 @@ python Trans2Chinese.py [-h] [--Translate_counter TRANSLATE_COUNTER] [--custom_c
 * If you encounter any errors, please check your LM Studio API key and ensure that you have sufficient GPU resources available for the selected model.
 
 
-# Additionally install after spaCy: 
 
-python -m spacy download en_core_web_sm
+### Important Note
 
+This project requires a local LLM server with API support, such as LM Studio or Oobabooga. Please ensure that you have a local LLM server set up and configured correctly before using this script.
 
-@article{qwen,
-  title={Qwen Technical Report},
-  author={Jinze Bai and Shuai Bai and Yunfei Chu and Zeyu Cui and Kai Dang and Xiaodong Deng and Yang Fan and Wenbin Ge and Yu Han and Fei Huang and Binyuan Hui and Luo Ji and Mei Li and Junyang Lin and Runji Lin and Dayiheng Liu and Gao Liu and Chengqiang Lu and Keming Lu and Jianxin Ma and Rui Men and Xingzhang Ren and Xuancheng Ren and Chuanqi Tan and Sinan Tan and Jianhong Tu and Peng Wang and Shijie Wang and Wei Wang and Shengguang Wu and Benfeng Xu and Jin Xu and An Yang and Hao Yang and Jian Yang and Shusheng Yang and Yang Yao and Bowen Yu and Hongyi Yuan and Zheng Yuan and Jianwei Zhang and Xingxuan Zhang and Yichang Zhang and Zhenru Zhang and Chang Zhou and Jingren Zhou and Xiaohuan Zhou and Tianhang Zhu},
-  journal={arXiv preprint arXiv:2309.16609},
-  year={2023}
-}
+**Recommendation:**
+
+Based on my experience, using the "qwen 1.5 13B" LLM model from LM Studio provides the best results for translating text to Chinese. However, you may experiment with different LLM models and choose the one that delivers the most satisfactory results for your specific needs.
+
+### Additional Information
+
+* For GPU acceleration, ensure you have a compatible GPU and the necessary drivers installed.
+* The `all_json.py` script automatically handles the translation process for multiple text files within a directory.
+* The JSON output file provides a structured format for storing the original and translated text pairs.
+* Trans2Chinese.py offers a convenient way to batch translate multiple text files.
+
+### Contributing
+
+We welcome contributions to this project. Please refer to the CONTRIBUTING.md file for guidelines on how to contribute.
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE.md file for details.
