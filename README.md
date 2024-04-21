@@ -6,7 +6,6 @@ Trans2Chinese- is a Python program that allows you to translate text to Chinese 
 
 **New Features:**
 
-* **PyTorch Installation:** Supports PyTorch installation for GPU acceleration, enabling faster processing for larger datasets.
 * **Traditional Chinese Conversion:** Allows conversion of translated text to Traditional Chinese using the OpenCC library.
 * **Original Text Retention:** Provides the option to keep the original text in the output file for learning purposes.
 * **Chunk Size Customization:** Enables users to specify the desired chunk size for text splitting, allowing for more granular control over the translation process.
