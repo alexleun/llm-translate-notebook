@@ -7,6 +7,9 @@ import argparse
 import opencc
 import json
 import os
+import logging
+# to skip printing langchain message e.g. "Created a chunk of size 42, which is longer than the specified 0"
+logging.getLogger().setLevel(logging.ERROR)
 
 # --- Global Variables (can be modified) ---
 url = "http://127.0.0.1:5000/v1/chat/completions"
@@ -27,7 +30,7 @@ def split_text(text, chunk_size=20):
     return text_splitter.split_text(text)
 
 # --- Function to generate translation prompt ---
-def generate_translation_prompt(text, language="Chinese"):
+def generate_translation_prompt(text, language="中文"):
     template = """
     翻译成{language}。 您应该仅回答翻译，如果不需要翻译，则仅回答原始字符串:
     {question}
@@ -85,7 +88,7 @@ def get_dissatisfaction_reason(original, translation):
 # --- Function to get improved translation ---
 def get_improved_translation(prompt, previous_translation):
     feedback = get_dissatisfaction_reason(prompt, previous_translation)
-    new_prompt = "请再翻译一次，我对结果不满意，因为 " + feedback
+    new_prompt = "请再翻译一次，因为 " + feedback
     data = {
         "messages": [
             {"role": "user", "content": prompt},
@@ -101,7 +104,7 @@ def get_improved_translation(prompt, previous_translation):
     return converter.convert(response.json()['choices'][0]['message']['content'])
 
 # --- Main Translation Function --- 
-def translate_text(text, language="Chinese", keep_original=False, chunk_size=20):
+def translate_text(text, language="中文", keep_original=False, chunk_size=20):
     chunks = split_text(text, chunk_size)
     original_text_list = []
     translated_text_list = []
