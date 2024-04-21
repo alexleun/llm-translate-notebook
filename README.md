@@ -2,7 +2,7 @@
 
 ### Introduction
 
-Trans2Chinese- is a Python program that allows you to translate text to Chinese using a local LLM server with API support. This version builds upon the previous iterations by incorporating new features and improvements:
+Trans2Chinese-v5 is a Python program that allows you to translate text to Chinese using a local LLM server with API support. This version builds upon the previous iterations by incorporating new features and improvements:
 
 **New Features:**
 
@@ -10,6 +10,7 @@ Trans2Chinese- is a Python program that allows you to translate text to Chinese 
 * **Original Text Retention:** Provides the option to keep the original text in the output file for learning purposes.
 * **Chunk Size Customization:** Enables users to specify the desired chunk size for text splitting, allowing for more granular control over the translation process.
 * **Improved Translation Accuracy:** Leverages the power of the Qwen LLM model to deliver more accurate and nuanced translations.
+* **Translation Quality Review:** Implements a feedback loop with the LLM to ensure translation accuracy.
 
 **Key Features:**
 
@@ -18,7 +19,7 @@ Trans2Chinese- is a Python program that allows you to translate text to Chinese 
 * Option to keep the original text in the output file for learning purposes
 * Supports convert to Traditional Chinese
 * Supports Option to keep original text in output file.
-* Improved translation accuracy with Qwen LLM model
+* Translation Quality Review for enhanced accuracy
 
 ### Requirements
 
@@ -107,7 +108,9 @@ python all_json.py --custom_chunk_size 20 --custom_language Chinese --Keep_Orign
 * The translation quality may vary depending on the complexity of the text and the chosen LLM model.
 * If you encounter any errors, please check your LM Studio API key and ensure that you have sufficient GPU resources available for the selected model.
 
+### Translation Quality Review
 
+The Trans2Chinese-v5 program incorporates a translation quality review process. After the initial translation by the LLM, the translated text is sent back to the LLM for review. If the LLM deems the translation to be inaccurate, the process is repeated with a different translation model or parameters. This feedback loop ensures that the final output is of high quality and meets your expectations.
 
 ### Important Note
 
