@@ -134,6 +134,9 @@ if __name__ == "__main__":
     base_name = os.path.splitext(os.path.basename(args.input_file))[0]
     out_file = f"{base_name}-big5.txt"
     json_file = f"{base_name}-big5.json"
+    translate_counter = 0
+    translate_counter = args.translate_counter
+    # print(f'\n\ntranslate_counter={translate_counter}\n\n')
 
     with open(args.input_file, 'r', encoding='utf-8') as f:
         text = f.read()
@@ -143,28 +146,37 @@ if __name__ == "__main__":
     translated_text_list = []
 
     with open(out_file, 'a', encoding='UTF-8') as outfile, open(json_file, 'a', encoding='UTF-8') as json_file:
+        i = -1
         for chunk in tqdm(chunks, desc="Translating", dynamic_ncols=True):
-            prompt = generate_translation_prompt(chunk, args.language)
-            translation = get_initial_translation(prompt)
-            while not is_good_translation(chunk, translation):
-                translation = get_improved_translation(prompt, translation)
+            i += 1
+            if i >= translate_counter:
+            
+                # print(f"\nchunk:'{chunk}'  is {not (chunk.isnumeric() or (len(chunk)==29 and chunk[-3:].isnumeric()) or len(chunk)<10)}\n")
+                # We will not translate if chunked string is too small; is numeric; is timestamp
+                if not (chunk.isnumeric() or (len(chunk)==29 and chunk[-3:].isnumeric()) or len(chunk)<5):
+                    prompt = generate_translation_prompt(chunk, args.language)
+                    translation = get_initial_translation(prompt)
+                    while not is_good_translation(chunk, translation):
+                        translation = get_improved_translation(prompt, translation)
 
-            # Save to text file
-            if args.keep_original:
-                outfile.write(f"\n{chunk}\n{translation}")
-            else:
-                outfile.write(f"\n{translation}")
-            outfile.flush()  # Ensure data is written to disk
+                    # Save to text file
+                    if args.keep_original:
+                        outfile.write(f"\n{chunk}\n{translation}")
+                    else:
+                        outfile.write(f"\n{translation}")
+                    #outfile.flush()  # Ensure data is written to disk
 
-            # Save to JSON file
-            original_text_list.append(chunk)
-            translated_text_list.append(translation)
-            json_data = {
-                "original_text": original_text_list,
-                "translated_text": translated_text_list
-            }
-            json.dump(json_data, json_file, ensure_ascii=False, indent=4)
-            json_file.write('\n')
-            json_file.flush()
-            original_text_list=[]
-            translated_text_list=[]
+                    # Save to JSON file
+                    original_text_list.append(chunk)
+                    translated_text_list.append(translation)
+                    json_data = {
+                        "original_text": original_text_list,
+                        "translated_text": translated_text_list
+                    }
+                    json.dump(json_data, json_file, ensure_ascii=False, indent=4)
+                    json_file.write('\n')
+                    #json_file.flush()
+                    original_text_list=[]
+                    translated_text_list=[]
+                else:
+                    outfile.write(f"\n{chunk}")
