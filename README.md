@@ -11,6 +11,7 @@ Trans2Chinese-v5 is a Python program that allows you to translate text to Chines
 * **Chunk Size Customization:** Enables users to specify the desired chunk size for text splitting, allowing for more granular control over the translation process.
 * **Improved Translation Accuracy:** Leverages the power of the Qwen LLM model to deliver more accurate and nuanced translations.
 * **Translation Quality Review:** Implements a feedback loop with the LLM to ensure translation accuracy.
+* **Timestamp Detection:** For SRT files, the program automatically detects and skips timestamps. This ensures that only the dialogue content is translated, preserving the original timing and formatting of the subtitles.
 
 **Key Features:**
 
