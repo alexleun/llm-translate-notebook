@@ -4,7 +4,9 @@ import os
 import argparse
 from tqdm import tqdm
 import json
-
+import logging
+# to skip printing langchain message e.g. "Created a chunk of size 42, which is longer than the specified 0"
+logging.getLogger().setLevel(logging.ERROR)
 # Import functions from Trans2Chinese-v5.py (assuming both files are in the same directory)
 from Trans2Chinese import translate_text, split_text
 

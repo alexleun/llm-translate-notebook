@@ -66,8 +66,10 @@ def is_good_translation(original, translation):
     response = requests.post(url, headers=headers, json=data, verify=False)
     response_text = response.json()['choices'][0]['message']['content']
     return ("翻译非常准确" in response_text.lower() or 
+            "翻译是准确的" in response_text.lower() or 
             "是的" in response_text.lower() or 
             "翻译准确" in response_text.lower() or  
+            "沒有发现不准确" in response_text.lower() or 
             "yes" in response_text.lower() or  
             "accurate" in response_text.lower() or 
             "fluent" in response_text.lower())
@@ -126,7 +128,7 @@ if __name__ == "__main__":
     # ... (parser arguments remain the same)
     parser.add_argument("-i", "--input_file", type=str, default="default.txt", help="Path to the input file")
     parser.add_argument("-c", "--chunk_size", type=int, default=20, help="Chunk size for text splitting")
-    parser.add_argument("-l", "--language", type=str, default="Chinese", help="Language to translate to")
+    parser.add_argument("-l", "--language", type=str, default="中文", help="Language to translate to")
     parser.add_argument("-k", "--keep_original", action="store_true", help="Keep the original text in the output file")
     parser.add_argument("-t", "--translate_counter", type=int, default=0, help="Translate counter for restart from stop point")    
 
