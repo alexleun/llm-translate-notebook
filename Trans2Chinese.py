@@ -12,7 +12,7 @@ import logging
 logging.getLogger().setLevel(logging.ERROR)
 
 # --- Global Variables (can be modified) ---
-url = "http://127.0.0.1:5000/v1/chat/completions"
+url = "http://127.0.0.1:1234/v1/chat/completions"
 headers = {
     "Content-Type": "application/json"
 }
@@ -29,19 +29,24 @@ def split_text(text, chunk_size=20):
     )
     return text_splitter.split_text(text)
 
-# --- Function to generate translation prompt ---
+# --- Function to generate translation prompt  您应该仅回答翻译，如果不需要翻译，则仅回答原始字符串 ---
 def generate_translation_prompt(text, language="中文"):
     template = """
-    翻译成{language}。 您应该仅回答翻译，如果不需要翻译，则仅回答原始字符串:
+    翻译成{language}:
     {question}
     """
+
     prompt = PromptTemplate(template=template, input_variables=["question", "language"])
     return prompt.format(question=text, language=language)
 
 # --- Function to get initial translation from API ---
 def get_initial_translation(prompt):
+    sys_prompt = """
+    This is system prompt: You will be provided with a user translation request, your task is to translate it.
+    """
     data = {
         "messages": [
+            {"role": "system", "content": sys_prompt},
             {"role": "user", "content": prompt}
         ],
         "mode": "instruct",
@@ -67,16 +72,19 @@ def is_good_translation(original, translation):
     response_text = response.json()['choices'][0]['message']['content']
     return ("翻译非常准确" in response_text.lower() or 
             "翻译是准确的" in response_text.lower() or 
+            "准确" in response_text.lower() or 
             "是的" in response_text.lower() or 
             "翻译准确" in response_text.lower() or  
             "沒有发现不准确" in response_text.lower() or 
+            "无不准确" in response_text.lower() or 
+            "这个版本的翻译是准确的" in response_text.lower() or 
             "yes" in response_text.lower() or  
             "accurate" in response_text.lower() or 
             "fluent" in response_text.lower())
 
 # --- Function to get reason for dissatisfaction ---
 def get_dissatisfaction_reason(original, translation):
-    feedback_prompt = f"请分析以下“{original}”的翻译，找出其中不准确、不流畅或不相关的地方。\n\n{translation}\n您应该回答翻译不够好的原因，例如， 翻译不准确，因为它没有传达与原文相同的含义，或者翻译不流畅，因为它包含语法错误或不恰当的措辞。\n\n如果翻译准确，请回答准确。"
+    feedback_prompt = f"请分析以下“{original}”的翻译，找出其中不准确、不流畅或不相关的地方。\n\n{translation}\n您应该回答翻译不够好的原因，例如， 翻译不准确，因为它没有传达与原文相同的含义，或者翻译不流畅，因为它包含语法错误或不恰当的措辞。\n\n如果翻译准确够好，请只回答[准确]。"
     data = {
         "messages": [{"role": "user", "content": feedback_prompt}],
         "mode": "instruct",
@@ -91,8 +99,12 @@ def get_dissatisfaction_reason(original, translation):
 def get_improved_translation(prompt, previous_translation):
     feedback = get_dissatisfaction_reason(prompt, previous_translation)
     new_prompt = "请再翻译一次，因为 " + feedback
+    sys_prompt = """
+    This is system prompt: You will be provided with a user translation review request, your task is to translate it.
+    """
     data = {
         "messages": [
+            {"role": "system", "content": sys_prompt},
             {"role": "user", "content": prompt},
             {"role": "assistant", "content": previous_translation},
             {"role": "user", "content": new_prompt}
