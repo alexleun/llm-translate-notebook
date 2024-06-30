@@ -83,10 +83,14 @@ def is_good_translation(original, translation):
             "fluent" in response_text.lower())
 
 # --- Function to get reason for dissatisfaction ---
+# 请分析以下“{original}”的翻译，找出其中不准确、不流畅或不相关的地方。\n\n{translation}\n您应该回答翻译不够好的原因，例如， 翻译不准确，因为它没有传达与原文相同的含义，或者翻译不流畅，因为它包含语法错误或不恰当的措辞。\n\n如果翻译准确够好，请只回答[准确]。
 def get_dissatisfaction_reason(original, translation):
-    feedback_prompt = f"请分析以下“{original}”的翻译，找出其中不准确、不流畅或不相关的地方。\n\n{translation}\n您应该回答翻译不够好的原因，例如， 翻译不准确，因为它没有传达与原文相同的含义，或者翻译不流畅，因为它包含语法错误或不恰当的措辞。\n\n如果翻译准确够好，请只回答[准确]。"
+    feedback_prompt = f"Original:{original}\nTranslation:{translation}"
     data = {
-        "messages": [{"role": "user", "content": feedback_prompt}],
+        "messages": [
+        {"role": "system", "content": "请分析以下的翻译，找出其中不准确、不流畅或不相关的地方。您应该回答翻译不够好的原因，例如， 翻译不准确，因为它没有传达与原文相同的含义，或者翻译不流畅，因为它包含语法错误或不恰当的措辞。如果翻译准确够好，请只回答[准确]。"},
+        {"role": "user", "content": feedback_prompt}
+        ],
         "mode": "instruct",
         "instruction_template": "Alpaca",
         "temperature": 0.7,
