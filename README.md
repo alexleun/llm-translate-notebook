@@ -135,3 +135,8 @@ We welcome contributions to this project. Please refer to the CONTRIBUTING.md fi
 ## License
 
 This project is licensed under the MIT License - see the LICENSE.md file for details.
+
+## System prompt update
+
+An AI-generated system prompt that offers professional translation services and editorial review tailored for LLM to enhance their own content review process.
+
