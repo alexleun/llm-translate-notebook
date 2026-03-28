@@ -14,7 +14,9 @@ logging.getLogger().setLevel(logging.ERROR)
 # --- Global Variables (can be modified) ---
 url = "http://127.0.0.1:1234/v1/chat/completions"
 headers = {
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "Authorization": "Bearer your_API_key_here_if_needed",
+    "model": "translategemma-4b-it", # or other model you define
 }
 converter = opencc.OpenCC('s2t')
 
