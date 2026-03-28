@@ -30,11 +30,19 @@ def split_text(text, chunk_size=20):
     return text_splitter.split_text(text)
 
 # --- Function to generate translation prompt  您应该仅回答翻译，如果不需要翻译，则仅回答原始字符串 ---
-def generate_translation_prompt(text, language="中文"):
+def generate_translation_prompt(text, language="zh-HK"):
     template = """
-    翻译成{language}:
-    {question}
-    """
+<start_of_turn>user
+You are a professional to {language} translator. 
+Your goal is to accurately convey the meaning and nuances of the original text while adhering to {language} grammar, vocabulary, and cultural sensitivities. 
+Produce ONLY the {language} translation, without any additional explanations, introductory remarks, or commentary.
+
+Please translate the following text into {language}:
+\"\"\"
+{question}
+\"\"\"<end_of_turn>
+<start_of_turn>model
+"""
 
     prompt = PromptTemplate(template=template, input_variables=["question", "language"])
     return prompt.format(question=text, language=language)
@@ -43,42 +51,9 @@ def generate_translation_prompt(text, language="中文"):
 # --- Old point: This is system prompt: You will be provided with a user translation request, your task is to translate it.
 
 def get_initial_translation(prompt):
-    sys_prompt = """
-    You are an experienced professional translator with expertise in both source (English) and target languages (Chinese). 
-    Your task is to translate the provided text from English to Chinese accurately. Only use information found within the body of the book (the content between Cover and Contents). Do not generate your own wording or provide explanations outside the given context. If there is any part of the input that does not belong in the translation, such as headers like 'Dedication' or publisher information, ignore it and focus solely on translating the text within the book's body.
-    Your task is to translate the provided text into Chinese while adhering to the following guidelines:
 
-Name Translation:
-
-If a name appears in the text, research and use its commonly accepted translation or transliteration if one exists.
-For names that are not widely known or do not have an established translation/transliteration, create a consistent transliteration based on pronunciation and local conventions.
-Stylistic Consistency:
-
-Maintain the original tone, style, and register of the source text (formal, informal, academic, etc.).
-Ensure that idiomatic expressions are translated into their closest natural equivalents in Chinese without losing their intended meaning.
-Pay attention to the use of punctuation marks to convey pauses and emphasis as they would be used in spoken language.
-Human-like Translation:
-
-Avoid literal word-for-word translations; instead, aim for a translation that sounds fluent and natural when read by a native speaker.
-Use colloquial expressions or phrasings where appropriate to match the tone of the original text.
-Pay attention to sentence structure and make adjustments as necessary to ensure readability in Chinese.
-Cultural Sensitivity:
-
-Be mindful of cultural references that might not have direct equivalents in the target language and find suitable alternatives when needed.
-Ensure that metaphors, idioms, and other expressions are appropriately adjusted for cross-cultural understanding without losing their intended meaning.
-Terminology Consistency:
-
-Use consistent terminology throughout the text unless contextually necessary to change it (e.g., different terms might be used in academic versus casual settings).
-Create a glossary of key terms and their translations if multiple occurrences are found within the text.
-Review and Refinement:
-
-After initial translation, review the entire passage for coherence and naturalness.
-Make any necessary refinements to ensure that the translated text flows well and accurately conveys the original meaning.
-By following these guidelines, your goal is to produce a high-quality translation that not only preserves the meaning of the original text but also resonates with native Chinese speakers in terms of style and expression. Remember to balance faithfulness to the source material with readability and naturalness in the target language.
-    """
     data = {
         "messages": [
-            {"role": "system", "content": sys_prompt},
             {"role": "user", "content": prompt}
         ],
         "mode": "instruct",
