@@ -15,9 +15,9 @@ logging.getLogger().setLevel(logging.ERROR)
 url = "http://127.0.0.1:1234/v1/chat/completions"
 headers = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer your_API_key_here_if_needed",
-    "model": "translategemma-4b-it", # or other model you define
+    "Authorization": "Bearer your_API_key_here_if_needed"
 }
+model = "translategemma-4b-it"
 converter = opencc.OpenCC('s2t')
 
 # --- Function to split text into chunks ---
@@ -55,6 +55,7 @@ Please translate the following text into {language}:
 def get_initial_translation(prompt):
 
     data = {
+        "model": model,
         "messages": [
             {"role": "user", "content": prompt}
         ],
@@ -71,6 +72,7 @@ def get_initial_translation(prompt):
 def is_good_translation(original, translation):
     check_prompt = f"Is the following translation of '{original}' accurate and fluent?\n\n{translation}"
     data = {
+        "model": model,
         "messages": [{"role": "user", "content": check_prompt}],
         "mode": "instruct",
         "instruction_template": "Alpaca",
@@ -145,6 +147,7 @@ By following these guidelines, you will be able to provide a thorough and human-
     """
     feedback_prompt = f"Original:{original}\nTranslation:{translation}"
     data = {
+        "model": model,
         "messages": [
         {"role": "system", "content": editor_prompt},
         {"role": "user", "content": feedback_prompt}
@@ -195,6 +198,7 @@ Make any necessary refinements to ensure that the translated text flows well and
 By following these guidelines, your goal is to produce a high-quality translation that not only preserves the meaning of the original text but also resonates with native Chinese speakers in terms of style and expression. Remember to balance faithfulness to the source material with readability and naturalness in the target language.
     """
     data = {
+        "model": model,
         "messages": [
             {"role": "system", "content": sys_prompt},
             {"role": "user", "content": prompt},
