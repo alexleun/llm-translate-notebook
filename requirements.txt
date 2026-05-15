@@ -1,0 +1,17 @@
+# Dependencies for Trans2Chinese.py translation script
+
+# HTTP library for API calls
+requests>=2.28.0
+
+# Progress bar for translation process
+tqdm>=4.64.0
+
+# Simplified to Traditional Chinese conversion
+opencc-python-reimplemented>=0.1.6
+
+# Note: Standard library imports (no need to install):
+# - re (regular expressions)
+# - argparse (command-line argument parsing)
+# - json (JSON handling)
+# - os (operating system interface)
+# - logging (logging functionality)

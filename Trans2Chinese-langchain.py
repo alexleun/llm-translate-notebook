@@ -1,4 +1,6 @@
-import re
+from langchain.prompts import PromptTemplate
+import io
+from langchain.text_splitter import CharacterTextSplitter
 import requests
 from tqdm import tqdm
 import argparse
@@ -6,58 +8,46 @@ import opencc
 import json
 import os
 import logging
+# to skip printing langchain message e.g. "Created a chunk of size 42, which is longer than the specified 0"
+logging.getLogger().setLevel(logging.ERROR)
 
 # --- Global Variables (can be modified) ---
 url = "http://127.0.0.1:1234/v1/chat/completions"
 headers = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer sk-lm-VEwb...Your API here"
+    "Authorization": "Bearer your_API_key_here_if_needed"
 }
-model = "qwen3.5-9b"
+model = "translategemma-4b-it"
 converter = opencc.OpenCC('s2t')
 
-# --- Function to split text into chunks without langchain ---
+# --- Function to split text into chunks ---
 def split_text(text, chunk_size=20):
-    chunks = []
-    current_chunk = []
-    current_length = 0
-    
-    lines = text.split('\n')
-    
-    for line in lines:
-        line_length = len(line)
-        if current_length + line_length > chunk_size and current_chunk:
-            chunks.append('\n'.join(current_chunk))
-            current_chunk = []
-            current_length = 0
-        
-        current_chunk.append(line)
-        current_length += line_length + 1  # +1 for newline character
-        
-        if current_length >= chunk_size:
-            chunks.append('\n'.join(current_chunk))
-            current_chunk = []
-            current_length = 0
-    
-    if current_chunk:
-        chunks.append('\n'.join(current_chunk))
-    
-    return chunks
+    text_splitter = CharacterTextSplitter(
+        separator="\n",
+        chunk_size=chunk_size,
+        chunk_overlap=0,
+        length_function=len,
+        is_separator_regex=False,
+    )
+    return text_splitter.split_text(text)
 
 # --- Function to generate translation prompt  您应该仅回答翻译，如果不需要翻译，则仅回答原始字符串 ---
 def generate_translation_prompt(text, language="zh-HK"):
-    prompt = f"""<start_of_turn>user
+    template = """
+<start_of_turn>user
 You are a professional to {language} translator. 
 Your goal is to accurately convey the meaning and nuances of the original text while adhering to {language} grammar, vocabulary, and cultural sensitivities. 
 Produce ONLY the {language} translation, without any additional explanations, introductory remarks, or commentary.
 
 Please translate the following text into {language}:
 \"\"\"
-{text}
+{question}
 \"\"\"<end_of_turn>
 <start_of_turn>model
 """
-    return prompt
+
+    prompt = PromptTemplate(template=template, input_variables=["question", "language"])
+    return prompt.format(question=text, language=language)
 
 # --- Function to get initial translation from API ---
 # --- Old point: This is system prompt: You will be provided with a user translation request, your task is to translate it.

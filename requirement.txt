@@ -1,8 +1,0 @@
-# ipywidgets
-langchain
-spacy
-transformers
-tqdm
-# torch
-# sentencepiece
-# python -m spacy download en_core_web_sm
