@@ -1,142 +1,75 @@
-## README.md for Trans2Chinese
+# llm-guide-translate
 
-### Introduction
+Translate large text files (novels, documents, etc.) using a local LLM via API (LM Studio / Ollama). Maintains a **translation guide** — an LLM-generated glossary — to keep terminology and names consistent across thousands of chunks.
 
-Trans2Chinese-v5 is a Python program that allows you to translate text to Chinese using a local LLM server with API support. This version builds upon the previous iterations by incorporating new features and improvements:
+## Features
 
-**New Features:**
+- **Chunk-based translation** — splits large files into manageable chunks, translates each via local LLM API
+- **Translation guide** — LLM analyzes a sample of the text to build a glossary (document type, writing style, term mappings) used in every translation prompt
+- **Resume support** — saves progress to `-translation-status.json`; interrupted runs can resume with `-r`
+- **Consistency** — the guide stores confirmed term/name translations (`confirmed_translations`) and includes them in each chunk's prompt
+- **Flexible** — works with any language pair (default: → 繁體中文), any text domain
+- **Echo tolerance** — when the model echoes the prompt instead of translating, the output is still written to the file for manual cleanup
 
-* **Traditional Chinese Conversion:** Allows conversion of translated text to Traditional Chinese using the OpenCC library.
-* **Original Text Retention:** Provides the option to keep the original text in the output file for learning purposes.
-* **Chunk Size Customization:** Enables users to specify the desired chunk size for text splitting, allowing for more granular control over the translation process.
-* **Improved Translation Accuracy:** Leverages the power of the Qwen LLM model to deliver more accurate and nuanced translations.
-* **Translation Quality Review:** Implements a feedback loop with the LLM to ensure translation accuracy.
-* **Timestamp Detection:** For SRT files, the program automatically detects and skips timestamps. This ensures that only the dialogue content is translated, preserving the original timing and formatting of the subtitles.
+## Requirements
 
-**Key Features:**
+- Python 3.8+
+- A running LLM API endpoint (LM Studio, Ollama, or OpenAI-compatible)
+- Dependencies in `requirements.txt`
 
-* Translates text to Chinese using a local LLM server
-* Supports custom chunk size and language selection
-* Option to keep the original text in the output file for learning purposes
-* Supports convert to Traditional Chinese
-* Supports Option to keep original text in output file.
-* Translation Quality Review for enhanced accuracy
+## Installation
 
-### Requirements
-
-* Python 3.6 or later
-* langchain
-* opencc
-* tqdm
-* argparse
-
-### Installation
-
-1. Install the required packages:
-
-```
-pip install langchain opencc tqdm argparse
+```bash
+pip install -r requirements.txt
 ```
 
-2. Clone this repository:
+Edit the script variables at the top to match your API endpoint and model:
 
-```
-git clone https://github.com/alexleun/llm-translate-notebook.git
-```
-
-### Usage
-
-1. Open the `Trans2Chinese.py` script for single file translation or `all_json.py` for batch translation in a text editor.
-
-2. Set the following parameters:
-
-* `custom_chunk_size`: Size of each chunk of text to be translated (default: 20)
-* `custom_language`: Language to translate to (default: "Chinese")
-* `Keep_Orignial`: Whether to keep the original text in the output file (default: False)
-
-3. Run the script:
-
-**For single file translation:**
-
-```
-python Trans2Chinese.py [-h] [-i INPUT_FILE] [-c CHUNK_SIZE] [-l LANGUAGE] [-k] [-t TRANSLATE_COUNTER]
-
-options:
-  -h, --help            show this help message and exit
-  -i INPUT_FILE, --input_file INPUT_FILE
-                        Path to the input file
-  -c CHUNK_SIZE, --chunk_size CHUNK_SIZE
-                        Chunk size for text splitting
-  -l LANGUAGE, --language LANGUAGE
-                        Language to translate to
-  -k, --keep_original   Keep the original text in the output file
-  -t TRANSLATE_COUNTER, --translate_counter TRANSLATE_COUNTER
-                        Translate counter for restart from stop point
+```python
+url = "http://127.0.0.1:1234/v1/chat/completions"
+model = "translategemma-4b-it"
 ```
 
-**For batch translation:**
+## Usage
 
-```
-python all_json.py [-h] [--Translate_counter TRANSLATE_COUNTER] [--custom_chunk_size CUSTOM_CHUNK_SIZE]
-                   [--custom_language CUSTOM_LANGUAGE] [--Keep_Orignial KEEP_ORIGNIAL]
-
-options:
-  -h, --help            show this help message and exit
-  --custom_chunk_size CUSTOM_CHUNK_SIZE
-                        custom chunk size
-  --custom_language CUSTOM_LANGUAGE
-                        custom chunk size
-  --Keep_Orignial KEEP_ORIGNIAL
-                        Keep original text or not
+```bash
+python main.py -i input.txt -l "繁體中文"
 ```
 
-**Example:**
+### Arguments
 
-To translate the text in `input.txt` to Chinese and save the output in a file with the same name but with the added suffix "-big5.txt", run the following command:
+| Argument | Description |
+|----------|-------------|
+| `-i`, `--input_file` | Input text file to translate |
+| `-c`, `--chunk_size` | Characters per chunk (default: 300) |
+| `-l`, `--language` | Target language (default: 繁體中文) |
+| `-r`, `--resume` | Resume from saved progress |
 
+### Output files
+
+For an input file `novel.txt`, the script generates:
+
+| File | Description |
+|------|-------------|
+| `novel-big5.txt` | Translated output (UTF-8) |
+| `novel-translation-guide.json` | LLM-generated glossary and confirmed translations |
+| `novel-translation-status.json` | Progress tracker for resume |
+
+## How it works
+
+1. **Sample & analyze** — takes a sample of chunks, asks the LLM to identify the document type, writing style, and terminology suggestions
+2. **Build guide** — stores the analysis as a `-translation-guide.json` file with confirmed term mappings
+3. **Translate** — for each chunk, builds a prompt that includes the guide's name context and style guidelines
+4. **Update guide** — extracts new terms from each chunk and appends them to the confirmed translations
+5. **Resume** — on interruption, `-r` reloads the status file and continues from the last processed chunk
+
+## Example
+
+```bash
+python main.py -i novel.txt -l "繁體中文" -c 300
+python main.py -i novel.txt -l "繁體中文" -r   # resume after interruption
 ```
-python Trans2Chinese.py --in_file input.txt --Translate_counter 0 --custom_chunk_size 20 --custom_language Chinese --Keep_Orignial False
-```
-
-To translate all text files in the directory to Chinese and save the translated files in the same directory with the added suffix "-big5.txt", run the following command:
-
-```
-python all_json.py --custom_chunk_size 20 --custom_language Chinese --Keep_Orignial False
-```
-
-**Note:**
-
-* The translation quality may vary depending on the complexity of the text and the chosen LLM model.
-* If you encounter any errors, please check your LM Studio API key and ensure that you have sufficient GPU resources available for the selected model.
-
-### Translation Quality Review
-
-The Trans2Chinese-v5 program incorporates a translation quality review process. After the initial translation by the LLM, the translated text is sent back to the LLM for review. If the LLM deems the translation to be inaccurate, the process is repeated with a different translation model or parameters. This feedback loop ensures that the final output is of high quality and meets your expectations.
-
-### Important Note
-
-This project requires a local LLM server with API support, such as LM Studio or Oobabooga. Please ensure that you have a local LLM server set up and configured correctly before using this script.
-
-**Recommendation:**
-
-Based on my experience, using the "qwen 1.5 13B" LLM model from LM Studio provides the best results for translating text to Chinese. However, you may experiment with different LLM models and choose the one that delivers the most satisfactory results for your specific needs.
-
-### Additional Information
-
-* For GPU acceleration, ensure you have a compatible GPU and the necessary drivers installed.
-* The `all_json.py` script automatically handles the translation process for multiple text files within a directory.
-* The JSON output file provides a structured format for storing the original and translated text pairs.
-* Trans2Chinese.py offers a convenient way to batch translate multiple text files.
-
-### Contributing
-
-We welcome contributions to this project. Please refer to the CONTRIBUTING.md file for guidelines on how to contribute.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE.md file for details.
-
-## System prompt update
-
-An AI-generated system prompt that offers professional translation services and editorial review tailored for LLM to enhance their own content review process.
-
+MIT
